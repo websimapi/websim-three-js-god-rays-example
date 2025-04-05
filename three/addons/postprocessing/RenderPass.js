@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { Pass } from './Pass.js';
 
 export class RenderPass extends Pass {
@@ -10,39 +11,79 @@ export class RenderPass extends Pass {
         this.overrideMaterial = overrideMaterial;
         this.overrideDepthMaterial = overrideDepthMaterial;
 
-        this.oldClearColor = new Float32Array( 4 );
+        this.oldClearColor = new THREE.Color();
         this.oldClearAlpha = 0;
 
         this.enabled = true;
         this.clear = true;
-        this.needsSwap = true;
+        this.needsSwap = false; // Note: needsSwap should be false by default for RenderPass
 
     }
 
-    render( renderer, writeBuffer, readBuffer ) {
+    render( renderer, writeBuffer, readBuffer /*, deltaTime, maskActive */ ) {
 
-        if ( this.overrideMaterial ) {
+        const oldAutoClear = renderer.autoClear;
+        renderer.autoClear = false;
 
-            // Save original material
-            const originalMaterials = {};
-            this.scene.traverse( function ( object ) {
-                if ( object.isMesh ) {
-                    originalMaterials[ object.id ] = object.material;
-                }
-            } );
+        let oldClearColor, oldClearAlpha, oldOverrideMaterial; // Declare variables
 
-            // Set override material
-            this.scene.traverse( function ( object ) {
-                if ( object.isMesh && object.material !== undefined ) {
-                    object.material = RenderPass.overrideMaterial;
-                }
-            } );
+        if ( this.overrideMaterial !== undefined ) {
+
+            oldOverrideMaterial = this.scene.overrideMaterial;
+
+            this.scene.overrideMaterial = this.overrideMaterial;
 
         }
 
-        if ( this.overrideDepthMaterial ) {
+        if ( this.clearColor ) { // Check if clearColor is set
 
-            // Save original material
-            const originalDepthMaterials = {};
-            this.scene.traverse( function ( object ) {
-                if ( object
+            renderer.getClearColor( this.oldClearColor ); // Use instance property
+            oldClearAlpha = renderer.getClearAlpha();
+
+            renderer.setClearColor( this.clearColor, this.clearAlpha );
+
+        }
+
+        if ( this.clearDepth ) { // Check if clearDepth is set
+
+            renderer.clearDepth();
+
+        }
+
+
+        // Render
+        renderer.setRenderTarget( this.renderToScreen ? null : readBuffer );
+
+        if ( this.clear ) renderer.clear( renderer.autoClearColor, renderer.autoClearDepth, renderer.autoClearStencil );
+        renderer.render( this.scene, this.camera );
+
+
+        // Restore original state
+        if ( this.clearColor ) {
+
+            renderer.setClearColor( this.oldClearColor, oldClearAlpha );
+
+        }
+
+
+        if ( this.overrideMaterial !== undefined ) {
+
+            this.scene.overrideMaterial = oldOverrideMaterial;
+
+        }
+
+
+        renderer.autoClear = oldAutoClear;
+
+
+    } // End render method - ensure closing bracket exists
+
+    setSize( width, height ) {
+
+    }
+
+    dispose() {
+
+    }
+
+} // End class definition - ensure closing bracket exists

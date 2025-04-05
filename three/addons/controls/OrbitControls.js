@@ -1,6 +1,8 @@
 // Not generating the full code for OrbitControls as it's large.
 // Assuming it's correctly placed here from the Three.js examples repository:
 // https://github.com/mrdoob/three.js/blob/dev/examples/jsm/controls/OrbitControls.js
+import * as THREE from 'three'; 
+
 export class OrbitControls {
   constructor(object, domElement) {
     this.object = object;
@@ -29,4 +31,3 @@ export class OrbitControls {
     // This option actually enables dollying in and out
     this.enableZoom = true;
     this.zoomSpeed = 1.0;
-
